@@ -2,6 +2,7 @@ package com.kuopan.Service;
 
 import com.kuopan.Entity.UserInfo;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.kuopan.Entity.dto.SessionWebUserDto;
 
 /**
  * <p>
@@ -12,6 +13,14 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @since 2026-01-13
  */
 public interface IUserInfoService extends IService<UserInfo> {
-    // To imply the new mapper function.
-    boolean changeOccuSpace(String id, Long space);
+
+    // Login method
+    SessionWebUserDto login(String email, String password);
+
+    // Reset password
+    void resetPassword(String email, String password, String emailCode);
+
+    // Update password
+    void updatePassword(SessionWebUserDto userDto, String oldPassword, String password );
+
 }

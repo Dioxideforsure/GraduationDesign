@@ -66,17 +66,12 @@
     </dependency>
 
     <!--mybatis-->
-    <dependency>
-      <groupId>org.mybatis.spring.boot</groupId>
-      <artifactId>mybatis-spring-boot-starter</artifactId>
-      <version>${mybatis.version}</version>
-    </dependency>
 
     <!--mybatis-plus-->
     <dependency>
       <groupId>com.baomidou</groupId>
-      <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
-      <version>3.5.7</version>
+      <artifactId>mybatis-plus-boot-starter</artifactId>
+      <version>3.5.3.1</version>
     </dependency>
 
     <!--lombok-->
@@ -143,6 +138,14 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security</artifactId>
     </dependency>
+
+      <!--邮件发送-->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-mail</artifactId>
+    </dependency>
+
+
 
   </dependencies>
   <build>

@@ -1,10 +1,29 @@
 package com.kuopan.Service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.kuopan.Component.RedisComponent;
+import com.kuopan.Config.AppConfig;
 import com.kuopan.Entity.UserInfo;
 import com.kuopan.DAO.UserInfoMapper;
+import com.kuopan.Entity.constants.Constants;
+import com.kuopan.Entity.dto.SessionWebUserDto;
+import com.kuopan.Entity.dto.UserSpaceDto;
+import com.kuopan.Entity.enums.SHAEnum;
+import com.kuopan.Exception.BusinessException;
+import com.kuopan.Service.EmailCodeService;
 import com.kuopan.Service.IUserInfoService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.kuopan.Util.SHAUtil;
+import org.apache.commons.lang3.ArrayUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.Resource;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>
@@ -17,8 +36,104 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> implements IUserInfoService {
 
+    @Resource
+    private UserInfoMapper userInfoMapper;
+
+    @Resource
+    private AppConfig appConfig;
+
+    @Resource
+    private RedisComponent redisComponent;
+    @Autowired
+    private EmailCodeService emailCodeService;
+
+    // Complete the login method
     @Override
-    public boolean changeOccuSpace(String id, Long space) {
-        return baseMapper.updateRemainSpaceByGUID(id, space) > 0;
+    @Transactional(rollbackFor = Exception.class)
+    public SessionWebUserDto login(String email, String password) {
+        System.out.println( "Notice:" + email + password);
+        LambdaQueryWrapper<UserInfo> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.eq(UserInfo::getEmail, email);
+        UserInfo user = userInfoMapper.selectOne(lambdaQueryWrapper);
+
+        if (user == null || !user.getPassword().equals(password)) {
+            throw new BusinessException("账号或密码错误");
+        }
+
+        if (!user.getStatus()) {
+            throw new BusinessException("账号已被禁用");
+        }
+
+        SessionWebUserDto sessionWebUserDto = new SessionWebUserDto();
+        sessionWebUserDto.setUserId(user.getUserId());
+        sessionWebUserDto.setNickName(user.getUserName());
+        sessionWebUserDto.setIsAdmin(false);
+        if (ArrayUtils.contains(appConfig.getAdminEmail().split(","), email)) {
+            sessionWebUserDto.setIsAdmin(true);
+        }
+
+
+        // User Space
+        UserSpaceDto userSpaceDto = new UserSpaceDto();
+        // TODO: Complete the detailed used space from database
+//        userSpaceDto.setUseSpace();
+        userSpaceDto.setTotalSpace(userSpaceDto.getTotalSpace());
+        redisComponent.saveUserUsedSpace(user.getUserId(), userSpaceDto);
+
+        return sessionWebUserDto;
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void resetPassword(String email, String password, String emailCode) {
+        LambdaQueryWrapper<UserInfo> query = new LambdaQueryWrapper<>();
+        query.eq(UserInfo::getEmail, email);
+        UserInfo user = userInfoMapper.selectOne(query);
+
+        if (user == null) {
+            throw new BusinessException("邮箱账号不存在");
+        }
+        emailCodeService.checkCode(email, emailCode);
+
+        UserInfo updateUser = new UserInfo();
+        updateUser.setUserId(user.getUserId());
+        updateUser.setPassword(SHAUtil.SHA256Encrypt(password));
+
+        int rows = userInfoMapper.updateById(updateUser);
+
+        if (rows == 0) {
+            throw new BusinessException("重置密码失败，请稍后重试");
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updatePassword(SessionWebUserDto userDto, String oldPassword, String password) {
+        if (userDto == null) {
+            throw new BusinessException("重置密码出现错误，登录可能过期");
+        }
+        String userID = userDto.getUserId();
+
+
+        LambdaQueryWrapper<UserInfo> query = new LambdaQueryWrapper<>();
+        query.eq(UserInfo::getUserId, userID);
+        UserInfo userInfo = userInfoMapper.selectOne(query);
+
+
+
+        if (!userInfo.getPassword().equals(oldPassword)) {
+            throw new BusinessException(403, "旧密码错误");
+        }
+
+        UserInfo updateUser = new UserInfo();
+        updateUser.setUserId(userID);
+        updateUser.setPassword(password);
+
+        int rows = userInfoMapper.updateById(updateUser);
+        if (rows == 0) {
+            throw new BusinessException("重置密码失败，请稍后重试");
+        }
+    }
+
+
 }

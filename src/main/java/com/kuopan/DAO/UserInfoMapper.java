@@ -6,7 +6,7 @@ import org.apache.ibatis.annotations.Param;
 
 /**
  * <p>
- * To put in User Infomation Mapper 接口
+ * To put in User Information Mapper 接口
  * </p>
  *
  * @author Kuo
