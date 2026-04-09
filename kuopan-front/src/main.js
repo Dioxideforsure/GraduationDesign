@@ -21,6 +21,7 @@ import Verify from '@/utils/Verify'
 import Message from '@/utils/Message'
 import Request from '@/utils/Request'
 import Confirm from '@/utils/Confirm'
+import Utils from '@/utils/Utils.js'
 
 const app = createApp(App)
 
@@ -34,5 +35,6 @@ app.config.globalProperties.Verify = Verify
 app.config.globalProperties.Message = Message
 app.config.globalProperties.Request = Request
 app.config.globalProperties.Confirm = Confirm
+app.config.globalProperties.Utils = Utils
 app.config.globalProperties.VueCookies = VueCookies
 app.mount('#app')

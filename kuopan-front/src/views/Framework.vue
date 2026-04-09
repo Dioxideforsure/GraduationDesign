@@ -19,7 +19,12 @@
             <span class="iconfont icon-transfer"></span>
           </template>
           <template #default>
-            Upload Here!!!!!!
+            <div style="padding:16px;">
+              <el-upload :show-file-list="false" :http-request="headerQuickUpload">
+                <el-button type="primary" size="small">上传文件</el-button>
+              </el-upload>
+              <div style="margin-top:8px;color:#888;font-size:12px;">与「全部」页上传共用同一接口 /file/upload</div>
+            </div>
           </template>
         </el-popover>
         <el-dropdown>
@@ -78,17 +83,20 @@
 </template>
 
 <script setup>
-import {ref, reactive, getCurrentInstance, nextTick, watch} from "vue";
+import {ref, watch} from "vue";
 import {useRouter, useRoute} from "vue-router";
 import UpdatePassword from "@/views/UpdatePassword.vue";
+import VueCookies from "vue-cookies";
+import Request from "@/utils/Request.js";
+import Message from "@/utils/Message.js";
+import Confirm from "@/utils/Confirm.js";
 
-const {proxy} = getCurrentInstance();
 const router = useRouter();
 const route = useRoute();
 const api = {
   logout: "/logout"
 }
-const userInfo = ref(proxy.VueCookies.get("userInfo"));
+const userInfo = ref(VueCookies.get("userInfo"));
 
 const menus = [
   {
@@ -214,21 +222,38 @@ const updatePassword = () => {
 }
 
 // Logout
+const headerQuickUpload = async (options) => {
+  const result = await Request({
+    url: "/file/upload",
+    file: options.file,
+    showLoading: true,
+  });
+  if (!result) {
+    options.onError?.(new Error("上传失败"));
+    return;
+  }
+  if (result.data && result.data.instantUpload) {
+    Message.success("秒传成功");
+  } else {
+    Message.success("上传成功");
+  }
+  options.onSuccess?.(result);
+};
+
 const logout = async () => {
-  proxy.Confirm(`你确定要退出吗`, async () => {
-    let result = await proxy.Request({
-    url: api.logout,
-  })
+  Confirm(`你确定要退出吗`, async () => {
+    let result = await Request({
+      url: api.logout,
+    });
 
     if (!result) {
       return;
     }
 
-    proxy.VueCookies.remove("userInfo");
-    router.push("/login")})
-
-
-}
+    VueCookies.remove("userInfo");
+    router.push("/login");
+  });
+};
 </script>
 
 <style lang="scss" scoped>

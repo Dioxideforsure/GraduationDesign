@@ -14,6 +14,7 @@ let loading = null;
 const instance = axios.create({
     baseURL: '/api',
     timeout: 30 * 1000,
+    withCredentials: true,
 });
 
 //请求前拦截器
@@ -73,28 +74,54 @@ instance.interceptors.response.use(
 );
 
 const request = (config) => {
-    const { url, params, dataType, showLoading = true, responseType = responseTypeJson} = config;
-    let contentType = contentTypeForm;
-    let formData = new FormData();
-    for (let key in params) {
-        formData.append(key, params[key] == undefined ? "" : params[key]);
-    }
-    if (dataType != null && dataType == 'json') {
-        contentType = contentTypeJson;
-    }
+    const {
+        url,
+        params = {},
+        dataType,
+        showLoading = true,
+        responseType = responseTypeJson,
+        file,
+        fileField = 'file',
+    } = config;
+
+    let data;
     let headers = {
-        'Content-Type': contentType,
         'X-Requested-With': 'XMLHttpRequest',
+    };
+    let timeout = 30 * 1000;
+
+    if (file != null) {
+        data = new FormData();
+        const raw = file.raw != null ? file.raw : file;
+        data.append(fileField, raw);
+        for (let key in params) {
+            const v = params[key];
+            if (v !== undefined && v !== null) {
+                data.append(key, v);
+            }
+        }
+        timeout = 120 * 1000;
+    } else {
+        let contentType = contentTypeForm;
+        data = new FormData();
+        for (let key in params) {
+            data.append(key, params[key] == undefined ? "" : params[key]);
+        }
+        if (dataType != null && dataType == 'json') {
+            contentType = contentTypeJson;
+        }
+        headers['Content-Type'] = contentType;
     }
 
-    return instance.post(url, formData, {
+    return instance.post(url, data, {
         onUploadProgress: (event) => {
             if (config.uploadProgressCallback) {
                 config.uploadProgressCallback(event);
             }
         },
         responseType: responseType,
-        headers:  headers,
+        headers: headers,
+        timeout,
         showLoading: showLoading,
         errorCallback: config.errorCallback,
         showError: config.showError
