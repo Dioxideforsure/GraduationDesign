@@ -1,0 +1,137 @@
+import axios from "axios";
+
+import {ElLoading} from "element-plus";
+import router from "@/router/index.js";
+
+import Message from "@/utils/Message.js";
+
+const contentTypeForm = 'application/x-www-form-urlencoded;charset=UTF-8'
+const contentTypeJson = 'application/json'
+
+const responseTypeJson = "json"
+
+let loading = null;
+const instance = axios.create({
+    baseURL: '/api',
+    timeout: 30 * 1000,
+    withCredentials: true,
+});
+
+//请求前拦截器
+instance.interceptors.request.use(
+    (config) => {
+        if (config.showLoading) {
+            loading = ElLoading.service({
+                lock: true,
+                text: '加载中......',
+                background: 'rgba(0, 0, 0, 0.7)',
+            });
+        }
+        return config;
+    },
+    (error) => {
+        if (config.showLoading && loading) {
+            loading.close();
+        }
+        Message.error("请求发送失败");
+        return Promise.reject("请求发送失败")
+    }
+);
+
+instance.interceptors.response.use(
+    (response) => {
+        const {showLoading, errorCallback, showError = true, responseType} = response.config;
+        if (showLoading && loading) {
+            loading.close()
+        }
+        const responseData = response.data;
+        if (responseType == "arraybuffer" || responseType == "blob") {
+            return responseData;
+        }
+
+        // Request in correct
+        if (responseData.code == 200) {
+            return responseData;
+        } else if (responseData.code == 901) {
+            // Timeout
+            router.push("/login?redirectUrl=" + encodeURI(router.currentRoute.value.path));
+            return Promise.reject({showError: false, msg: "登录超时"});
+        } else {
+            // Other error
+            if (errorCallback) {
+                errorCallback(responseData.info);
+            }
+            return Promise.reject({showError: showError, msg: responseData.info})
+        }
+    },
+    (error) => {
+        if (error.config.showLoading && loading) {
+            loading.close();
+        }
+        console.error(error)
+        return Promise.reject({showError: true, msg: "网络异常"})
+    }
+);
+
+const request = (config) => {
+    const {
+        url,
+        params = {},
+        dataType,
+        showLoading = true,
+        responseType = responseTypeJson,
+        file,
+        fileField = 'file',
+    } = config;
+
+    let data;
+    let headers = {
+        'X-Requested-With': 'XMLHttpRequest',
+    };
+    let timeout = 30 * 1000;
+
+    if (file != null) {
+        data = new FormData();
+        const raw = file.raw != null ? file.raw : file;
+        data.append(fileField, raw);
+        for (let key in params) {
+            const v = params[key];
+            if (v !== undefined && v !== null) {
+                data.append(key, v);
+            }
+        }
+        timeout = 120 * 1000;
+    } else {
+        let contentType = contentTypeForm;
+        data = new FormData();
+        for (let key in params) {
+            data.append(key, params[key] == undefined ? "" : params[key]);
+        }
+        if (dataType != null && dataType == 'json') {
+            contentType = contentTypeJson;
+        }
+        headers['Content-Type'] = contentType;
+    }
+
+    return instance.post(url, data, {
+        onUploadProgress: (event) => {
+            if (config.uploadProgressCallback) {
+                config.uploadProgressCallback(event);
+            }
+        },
+        responseType: responseType,
+        headers: headers,
+        timeout,
+        showLoading: showLoading,
+        errorCallback: config.errorCallback,
+        showError: config.showError
+    }).catch(error => {
+        console.log(error);
+        if (error.showError) {
+            Message.error(error.msg);
+        }
+        return null;
+    })
+}
+
+export default request;

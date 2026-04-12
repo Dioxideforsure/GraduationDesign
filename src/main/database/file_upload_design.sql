@@ -1,0 +1,30 @@
+CREATE TABLE `file_info` (
+    `file_id` varchar(36) NOT NULL COMMENT '文件ID',
+    `user_id` varchar(36) NOT NULL COMMENT '用户ID',
+    `file_md5` varchar(32) DEFAULT NULL COMMENT '文件MD5值',
+    `file_pid` varchar(10) DEFAULT NULL COMMENT '父级ID',
+    `file_size` bigint(20) DEFAULT NULL COMMENT '文件大小',
+    `file_name` varchar(200) DEFAULT NULL COMMENT '文件名',
+    `file_cover` varchar(100) DEFAULT NULL COMMENT '封面',
+    `file_path` varchar(100) DEFAULT NULL COMMENT '文件路径',
+    `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+    `last_update_time` datetime DEFAULT NULL COMMENT '最后更新时间',
+    `folder_type` tinyint(1) DEFAULT NULL COMMENT '0: 文件 1: 目录',
+    `file_category` tinyint(1) DEFAULT NULL COMMENT '文件分类 1: 视频 2: 音频 3: 图片 4: 文档 5: 其他',
+    `file_type` tinyint(1) DEFAULT NULL COMMENT '1: 视频 2: 音频 3: 图片 4: pdf 5: doc 6: excel 7: txt 8: code 9: zip 10: 其他',
+    `status` tinyint(1) DEFAULT NULL COMMENT '0: 转码中 1: 转码失败 2: 转码成功',
+    `recovery_time` datetime DEFAULT NULL COMMENT '进入回收站时间',
+    `del_flag` tinyint(1) DEFAULT NULL COMMENT '标记删除 0: 删除 1: 回收站 2: 正常',
+    PRIMARY KEY (`file_id`, `user_id`),
+    KEY `idx_create_time` (`create_time`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_md5` (`file_md5`),
+    KEY `idx_file_pid` (`file_pid`),
+    KEY `idx_del_flag` (`del_flag`),
+    KEY `idx_recover_time` (`recovery_time`),
+    KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文件信息';
+
+-- 预留扩展说明（实现见 Java：com.kuopan.fileupload.FileUploadFeatureReserved）
+-- file_md5：秒传/去重；file_cover：缩略图；status：视频转码进度；
+-- 分片上传、合并、切片、在线预览：建议新增独立 REST 接口，合并完成后再写 file_info。
