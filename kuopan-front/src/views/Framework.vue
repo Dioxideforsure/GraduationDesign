@@ -94,7 +94,7 @@ import Confirm from "@/utils/Confirm.js";
 const router = useRouter();
 const route = useRoute();
 const api = {
-  logout: "/logout"
+  logout: "/exit"
 }
 const userInfo = ref(VueCookies.get("userInfo"));
 

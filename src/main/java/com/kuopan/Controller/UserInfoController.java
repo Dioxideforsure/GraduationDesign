@@ -13,7 +13,6 @@ import com.kuopan.Service.impl.EmailCodeServiceImpl;
 import com.kuopan.Service.impl.UserInfoServiceImpl;
 import com.kuopan.Util.SHAUtil;
 import com.kuopan.vo.ResponseVO;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -144,7 +143,7 @@ public class UserInfoController extends BaseController {
     /*
      * Logout
      */
-    @RequestMapping("/logout")
+    @RequestMapping("/exit")
     @GlobalInterceptor(checkLogin = false)
     public ResponseVO logout(HttpSession session) {
         if (session != null){
