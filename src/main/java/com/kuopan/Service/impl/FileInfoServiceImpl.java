@@ -81,7 +81,6 @@ public class FileInfoServiceImpl {
             return saveByFastUpload(userId, filePid, originFileName, fileSize, suffix, fileMd5, fastHit.getFilePath(), fastHit.getFileCover(), userSpaceDto, useSpace);
         }
 
-        // 修复：生成 10 位短 ID，防止超长报错
         String fileId = RandomStringUtils.randomAlphanumeric(10);
         String localName = StringUtils.isBlank(suffix) ? fileId : fileId + "." + suffix;
         String relativePath = "file/" + userId + "/" + LocalDate.now() + "/" + localName;
@@ -101,7 +100,7 @@ public class FileInfoServiceImpl {
             fileInfo.setFileId(fileId);
             fileInfo.setUserId(userId);
             fileInfo.setFileMd5(fileMd5);
-            fileInfo.setFilePid(filePid); // 存入父目录ID
+            fileInfo.setFilePid(filePid);
             fileInfo.setFileName(originFileName);
             fileInfo.setFilePath(relativePath);
             fileInfo.setFileCover(null);
@@ -143,7 +142,7 @@ public class FileInfoServiceImpl {
         w.eq(FileInfo::getDelFlag, DEL_FLAG_NORMAL);
 
         if (StringUtils.isBlank(filePid)) filePid = "0";
-        w.eq(FileInfo::getFilePid, filePid); // 只查当前目录
+        w.eq(FileInfo::getFilePid, filePid);
 
         if (StringUtils.isNotBlank(fileNameFuzzy)) w.like(FileInfo::getFileName, fileNameFuzzy);
         Integer cat = resolveCategoryFilter(categoryKey);
@@ -198,8 +197,6 @@ public class FileInfoServiceImpl {
         if (useSpace + fileSize > totalSpace) throw new BusinessException("用户空间不足，请清理后重试");
 
         String suffix = FilenameUtils.getExtension(fileName);
-
-        // 修复：生成 10 位短 ID
         String fileId = RandomStringUtils.randomAlphanumeric(10);
         String localName = StringUtils.isBlank(suffix) ? fileId : fileId + "." + suffix;
         String relativePath = "file/" + userId + "/" + LocalDate.now() + "/" + localName;
@@ -274,7 +271,6 @@ public class FileInfoServiceImpl {
         LocalDateTime now = LocalDateTime.now();
         FileInfo folder = new FileInfo();
 
-        // 修复：生成 10 位短 ID
         folder.setFileId(RandomStringUtils.randomAlphanumeric(10));
         folder.setUserId(userId);
         folder.setFilePid(filePid);
@@ -292,6 +288,7 @@ public class FileInfoServiceImpl {
         return res;
     }
 
+    // 将文件移入回收站
     @Transactional(rollbackFor = Exception.class)
     public void deleteFile(String userId, String fileIds) {
         if (StringUtils.isBlank(fileIds)) throw new BusinessException("请选择文件");
@@ -303,6 +300,44 @@ public class FileInfoServiceImpl {
                 .set(FileInfo::getRecoveryTime, LocalDateTime.now());
         fileInfoMapper.update(null, updateWrapper);
     }
+
+    // 彻底删除文件，并返还用户网盘空间
+
+    @Transactional(rollbackFor = Exception.class)
+    public void thoroughDeleteFile(String userId, String fileIds) {
+        if (StringUtils.isBlank(fileIds)) throw new BusinessException("请选择要彻底删除的文件");
+        String[] idArray = fileIds.split(",");
+
+        // 1. 查询要彻底删除的文件的总大小（只计算真实文件，因为文件夹大小为0）
+        LambdaQueryWrapper<FileInfo> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(FileInfo::getUserId, userId)
+                .in(FileInfo::getFileId, java.util.Arrays.asList(idArray))
+                .eq(FileInfo::getFolderType, FOLDER_TYPE_FILE);
+
+        List<FileInfo> fileList = fileInfoMapper.selectList(queryWrapper);
+        long totalSize = 0L;
+        for (FileInfo file : fileList) {
+            totalSize += file.getFileSize() == null ? 0L : file.getFileSize();
+        }
+
+        // 2. 将数据库中的文件标记为彻底删除 (delFlag = 0)
+        LambdaUpdateWrapper<FileInfo> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.in(FileInfo::getFileId, java.util.Arrays.asList(idArray))
+                .eq(FileInfo::getUserId, userId)
+                .set(FileInfo::getDelFlag, 0);
+        fileInfoMapper.update(null, updateWrapper);
+
+        // 3. 归还空间：扣除 MySQL 中的占用的空间，并同步到 Redis
+        if (totalSize > 0) {
+            userInfoMapper.decreaseOccuSpaceByUserId(userId, totalSize);
+            UserSpaceDto userSpaceDto = redisComponent.getUserUsedSpace(userId);
+            Long useSpace = userSpaceDto.getUseSpace() == null ? 0L : userSpaceDto.getUseSpace();
+            // 防止扣成负数，最小为0
+            userSpaceDto.setUseSpace(Math.max(useSpace - totalSize, 0L));
+            redisComponent.saveUserUsedSpace(userId, userSpaceDto);
+        }
+    }
+    // ==========================================
 
     private Integer resolveCategoryFilter(String category) {
         if (StringUtils.isBlank(category) || "all".equalsIgnoreCase(category.trim())) return null;
@@ -335,8 +370,6 @@ public class FileInfoServiceImpl {
     private Map<String, Object> saveByFastUpload(String userId, String filePid, String originFileName, Long fileSize, String suffix, String fileMd5, String relativePath, String fileCover, UserSpaceDto userSpaceDto, Long useSpace) {
         if (StringUtils.isBlank(filePid)) filePid = "0";
         FileInfo fileInfo = new FileInfo();
-
-        // 修复：生成 10 位短 ID
         fileInfo.setFileId(RandomStringUtils.randomAlphanumeric(10));
         fileInfo.setUserId(userId);
         fileInfo.setFileMd5(fileMd5);
@@ -354,9 +387,11 @@ public class FileInfoServiceImpl {
         fileInfo.setCreateTime(LocalDateTime.now());
         fileInfo.setLastUpdateTime(LocalDateTime.now());
         fileInfoMapper.insert(fileInfo);
+
         userInfoMapper.updateRemainSpaceByGUID(userId, fileSize);
         userSpaceDto.setUseSpace(useSpace + fileSize);
         redisComponent.saveUserUsedSpace(userId, userSpaceDto);
+
         Map<String, Object> result = new HashMap<>();
         result.put("fileId", fileInfo.getFileId());
         result.put("instantUpload", true);

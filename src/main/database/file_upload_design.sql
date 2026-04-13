@@ -25,6 +25,3 @@ CREATE TABLE `file_info` (
     KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文件信息';
 
--- 预留扩展说明（实现见 Java：com.kuopan.fileupload.FileUploadFeatureReserved）
--- file_md5：秒传/去重；file_cover：缩略图；status：视频转码进度；
--- 分片上传、合并、切片、在线预览：建议新增独立 REST 接口，合并完成后再写 file_info。

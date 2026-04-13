@@ -60,12 +60,14 @@
               <template v-if="getThumbnailUrl(scope.row)">
                 <el-image class="file-cover" :src="getThumbnailUrl(scope.row)" fit="cover">
                   <template #error>
-                    <div class="image-slot"><span class="iconfont icon-file"></span></div>
+                    <div class="image-slot">
+                      <img class="file-icon" :src="getFileIcon(scope.row)" />
+                    </div>
                   </template>
                 </el-image>
               </template>
               <template v-else>
-                <span :class="['iconfont', scope.row.folderType == 1 ? 'icon-folder' : 'icon-file']"></span>
+                <img class="file-icon" :src="getFileIcon(scope.row)" />
               </template>
 
               <span class="file-name" @click="itemClick(scope.row)">
@@ -131,7 +133,6 @@
     </el-dialog>
 
     <Preview ref="previewRef" />
-
   </div>
 </template>
 
@@ -145,24 +146,35 @@ import Message from "@/utils/Message.js";
 import SparkMD5 from 'spark-md5';
 import Preview from "@/components/Preview.vue";
 
-const route = useRoute();
+// ====== 🚀 引入本地精美图标资源 ======
+import iconFolder from '@/assets/icon-image/folder.png';
+import iconPdf from '@/assets/icon-image/pdf.png';
+import iconWord from '@/assets/icon-image/word.png';
+import iconExcel from '@/assets/icon-image/excel.png';
+import iconPpt from '@/assets/icon-image/ppt1.png';
+import iconTxt from '@/assets/icon-image/txt.png';
+import iconCode from '@/assets/icon-image/code.png';
+import iconZip from '@/assets/icon-image/zip.png';
+import iconExe from '@/assets/icon-image/exe.png';
+import iconVideo from '@/assets/icon-image/video.png';
+import iconMusic from '@/assets/icon-image/music.png';
+import iconImage from '@/assets/icon-image/image.png';
+import iconOthers from '@/assets/icon-image/others.png';
 
+const route = useRoute();
 const loading = ref(false);
 const fileList = ref([]);
 const fileNameFuzzy = ref("");
 const selectFileIdList = ref([]);
 
-// --- 目录导航与面包屑 ---
 const currentFolderId = ref("0");
 const breadcrumbList = ref([]);
 const category = computed(() => route?.params?.category || "all");
 
-// --- 预览与弹窗 ---
 const previewRef = ref(null);
 const newFolderDialogVisible = ref(false);
 const newFolderName = ref("");
 
-// --- 上传相关 ---
 const fileInputRef = ref(null);
 const chunkUploadDialogVisible = ref(false);
 const selectedFiles = ref([]);
@@ -170,6 +182,37 @@ const chunkSize = 10 * 1024 * 1024;
 const uploadProgress = ref({});
 const uploading = ref(false);
 const AUTO_CHUNK_THRESHOLD = 10 * 1024 * 1024;
+
+// ==================== 智能图标匹配逻辑 ====================
+// 1. 获取服务器真实封面 (图片/视频专用)
+const getThumbnailUrl = (row) => {
+  if (row.fileCover) return `/api/file_res/${row.fileCover}`;
+  if (row.fileCategory === 3 && row.filePath) return `/api/file_res/${row.filePath}`;
+  return null;
+};
+
+// 2. 文件后缀与图标映射表
+const iconMap = {
+  pdf: iconPdf,
+  doc: iconWord, docx: iconWord,
+  xls: iconExcel, xlsx: iconExcel,
+  ppt: iconPpt, pptx: iconPpt,
+  txt: iconTxt,
+  zip: iconZip, rar: iconZip, '7z': iconZip, tar: iconZip, gz: iconZip,
+  exe: iconExe, bat: iconExe, msi: iconExe,
+  js: iconCode, java: iconCode, vue: iconCode, html: iconCode, css: iconCode, json: iconCode, py: iconCode, xml: iconCode, sql: iconCode,
+  mp3: iconMusic, wav: iconMusic, flac: iconMusic, ogg: iconMusic,
+  mp4: iconVideo, avi: iconVideo, mkv: iconVideo, rmvb: iconVideo, mov: iconVideo,
+  jpg: iconImage, jpeg: iconImage, png: iconImage, gif: iconImage, bmp: iconImage, svg: iconImage
+};
+
+// 3. 根据后缀获取对应图标
+const getFileIcon = (row) => {
+  if (row.folderType === 1) return iconFolder; // 文件夹直接返回
+  const fileName = row.fileName || '';
+  const suffix = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+  return iconMap[suffix] || iconOthers; // 匹配不到的给 others.png
+};
 
 // ==================== 文件列表加载 ====================
 const loadDataList = async () => {
@@ -180,7 +223,7 @@ const loadDataList = async () => {
       params: {
         fileNameFuzzy: fileNameFuzzy.value,
         category: category.value === 'all' ? '' : category.value,
-        filePid: currentFolderId.value // 携带当前目录ID
+        filePid: currentFolderId.value
       },
       showLoading: false,
     });
@@ -200,13 +243,6 @@ watch(
     { immediate: true },
 );
 
-// 获取缩略图
-const getThumbnailUrl = (row) => {
-  if (row.fileCover) return `/api/file_res/${row.fileCover}`;
-  if (row.fileCategory === 3 && row.filePath) return `/api/file_res/${row.filePath}`;
-  return null;
-};
-
 // ==================== 目录导航 ====================
 const itemClick = (row) => {
   if (row.folderType == 1) {
@@ -218,7 +254,7 @@ const itemClick = (row) => {
       Message.warning("视频正在努力转码中，请稍后再试！");
       return;
     }
-    previewRef.value.show(row); // 调用预览
+    previewRef.value.show(row);
   }
 };
 
@@ -330,16 +366,13 @@ const handleFileSelect = async (event) => {
   }
 };
 
-// 普通上传 (🔥🔥 核心修复点：把 file 放进 params 外面，让 Request.js 正常识别 FormData)
 const uploadFileDirect = async (file) => {
   const loadingInstance = ElLoading.service({ lock: true, text: '上传中...', background: 'rgba(0, 0, 0, 0.7)' });
   try {
     const result = await Request({
       url: "/file/upload",
-      params: {
-        filePid: currentFolderId.value
-      },
-      file: file, // 👈 必须放在 params 外面！
+      params: { filePid: currentFolderId.value },
+      file: file,
       showLoading: false,
     });
     loadingInstance.close();
@@ -353,7 +386,6 @@ const uploadFileDirect = async (file) => {
   }
 };
 
-// 秒传
 const executeInstantUpload = async (fileMd5, file) => {
   const res = await Request({
     url: "/file/mergeChunk",
@@ -407,7 +439,6 @@ const startChunkUpload = async (file) => {
   await uploadChunks(fileMd5, file);
 };
 
-// 分片上传 (🔥🔥 核心修复点：把 chunk 放进 params 外面)
 const uploadChunks = async (fileMd5, file) => {
   uploading.value = true;
   const chunks = Math.ceil(file.size / chunkSize);
@@ -419,12 +450,8 @@ const uploadChunks = async (fileMd5, file) => {
     try {
       const res = await Request({
         url: "/file/uploadChunk",
-        params: {
-          fileMd5: fileMd5,
-          chunkIndex: i,
-          chunks: chunks
-        },
-        file: chunk, // 👈 必须放在 params 外面！
+        params: { fileMd5: fileMd5, chunkIndex: i, chunks: chunks },
+        file: chunk,
         fileField: "chunk",
         showLoading: false,
         uploadProgressCallback: (progressEvent) => {
@@ -473,7 +500,6 @@ const mergeChunks = async (fileMd5, file) => {
 const closeChunkDialog = () => {
   chunkUploadDialogVisible.value = false; uploading.value = false; selectedFiles.value = []; uploadProgress.value = {};
 };
-
 </script>
 
 <style lang="scss" scoped>
@@ -484,9 +510,7 @@ const closeChunkDialog = () => {
 
 /* 面包屑导航样式 */
 .breadcrumb {
-  margin-bottom: 15px;
-  font-size: 14px;
-  color: #606266;
+  margin-bottom: 15px; font-size: 14px; color: #606266;
   .nav-item { cursor: pointer; color: #05a1f5; &:hover { text-decoration: underline; } }
   .separator { margin: 0 8px; color: #909399; }
 }
@@ -495,12 +519,17 @@ const closeChunkDialog = () => {
   background: #fff; border-radius: 5px;
   .file-item {
     display: flex; align-items: center;
-    .file-cover {
-      width: 40px; height: 40px; border-radius: 6px; margin-right: 15px; flex-shrink: 0; background-color: #f0f0f0;
-      display: flex; align-items: center; justify-content: center;
-      .image-slot { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: #b0b0b0; .iconfont { margin-right: 0; font-size: 24px; } }
+
+    .file-icon {
+      width: 32px; height: 32px; margin-right: 15px; flex-shrink: 0;
     }
-    .iconfont { font-size: 28px; margin-right: 15px; color: #ffd659; &.icon-file { color: #b0b0b0; } }
+
+    .file-cover {
+      width: 36px; height: 36px; border-radius: 4px; margin-right: 15px; flex-shrink: 0; background-color: #f0f0f0;
+      display: flex; align-items: center; justify-content: center;
+      .image-slot { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+    }
+
     .file-name { cursor: pointer; color: #4a4a4a; transition: color 0.3s; &:hover { color: #05a1f5; } }
   }
 }

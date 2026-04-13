@@ -6,6 +6,7 @@ import com.kuopan.Annotation.GlobalInterceptor;
 import com.kuopan.DAO.FileInfoMapper;
 import com.kuopan.Entity.FileInfo;
 import com.kuopan.Entity.dto.SessionWebUserDto;
+import com.kuopan.Service.impl.FileInfoServiceImpl;
 import com.kuopan.vo.ResponseVO;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,6 +27,10 @@ public class RecycleController extends BaseController {
 
     @Resource
     private FileInfoMapper fileInfoMapper;
+
+    // 引入服务层，为了调用归还空间的方法
+    @Resource
+    private FileInfoServiceImpl fileInfoService;
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -52,7 +57,6 @@ public class RecycleController extends BaseController {
             map.put("folderType", f.getFolderType() == null ? 0 : f.getFolderType());
             map.put("recoveryTime", f.getRecoveryTime() != null ? TIME_FMT.format(f.getRecoveryTime()) : "");
 
-            // 修复：必须加上这三行，前端才能正常显示缩略图
             map.put("fileCover", f.getFileCover());
             map.put("fileCategory", f.getFileCategory());
             map.put("filePath", f.getFilePath());
@@ -85,21 +89,14 @@ public class RecycleController extends BaseController {
     }
 
     /**
-     * 彻底删除文件
+     * 彻底删除文件（调用 service 层方法，同步释放磁盘配额）
      */
     @RequestMapping("/delFile")
     @GlobalInterceptor(checkLogin = true)
-    @Transactional(rollbackFor = Exception.class)
     public ResponseVO delFile(HttpSession session, String fileIds) {
         SessionWebUserDto userDto = getUserInfoFromSession(session);
-        String[] idArray = fileIds.split(",");
-
-        LambdaUpdateWrapper<FileInfo> update = new LambdaUpdateWrapper<>();
-        update.in(FileInfo::getFileId, Arrays.asList(idArray))
-                .eq(FileInfo::getUserId, userDto.getUserId())
-                .set(FileInfo::getDelFlag, 0); // 彻底删除设为 0
-
-        fileInfoMapper.update(null, update);
+        // 👇 调用核心的扣除空间的方法
+        fileInfoService.thoroughDeleteFile(userDto.getUserId(), fileIds);
         return ResponseVO.success(null);
     }
 }
