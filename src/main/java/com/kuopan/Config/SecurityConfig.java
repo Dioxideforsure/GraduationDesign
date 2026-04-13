@@ -22,10 +22,10 @@ public class SecurityConfig {
                 .authorizeRequests()
                 .antMatchers(
                         "/checkCode", "/sendEmailCode", "/resetPassword", "/login",
-                        "/getUsedSpace", "/updatePassword", "/logout", "/file/upload",
+                        "/getUsedSpace", "/updatePassword", "/exit", "/file/upload",
                         "/file/list", "/file/uploadChunk", "/file/mergeChunk", "/file/checkMd5",
                         "/file/newFolder", "/file/delFile",
-                        "/recycle/**" // 放行回收站所有接口
+                        "/recycle/**"
                 )
                 .permitAll()
                 .anyRequest().authenticated()
