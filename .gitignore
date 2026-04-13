@@ -46,3 +46,6 @@ src/main/resources/application.properties
 
 ## File upload ##
 file/
+
+## Logs ##
+logs/

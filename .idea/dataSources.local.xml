@@ -17,10 +17,16 @@
       </schema-mapping>
     </data-source>
     <data-source name="KuoPanRedis" uuid="88affee9-9cda-42ce-804c-eb09028daba0">
-      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="REDIS" />
+      <database-info product="Redis Standalone" version="5.0.14.1" jdbc-version="4.2" driver-name="Redis JDBC Driver" driver-version="1.5" dbms="REDIS" exact-version="5.0.14.1" exact-driver-version="1.5">
+        <jdbc-catalog-is-schema>true</jdbc-catalog-is-schema>
+      </database-info>
       <case-sensitivity plain-identifiers="mixed" quoted-identifiers="mixed" />
       <auth-provider>no-auth</auth-provider>
-      <schema-mapping />
+      <schema-mapping>
+        <introspection-scope>
+          <node kind="schema" qname="0" />
+        </introspection-scope>
+      </schema-mapping>
     </data-source>
     <data-source name="kuopan_database@127.0.0.1" uuid="aac0f85a-e4cf-4a8e-9fb3-d4a84a7516a0">
       <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="MYSQL" />
