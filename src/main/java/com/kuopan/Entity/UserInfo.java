@@ -1,82 +1,84 @@
 package com.kuopan.Entity;
 
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.TableField;
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.util.Date;
 
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-
-/**
- * <p>
- * To put in User Infomation
- * </p>
- *
- * @author Kuo
- * @since 2026-01-13
- */
-@Getter
-@Setter
 @TableName("user_info")
-@Data
-public class UserInfo implements IEntity {
+public class UserInfo implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
-    /**
-     * To put UserID in GUID string
-     */
-    @TableId("user_id")
+    @TableId
     private String userId;
 
-    /**
-     * To put the nickname of users
-     */
     @TableField("user_name")
-    private String userName;
+    private String nickName;
 
-    /**
-     * To put in the emails from user
-     */
-    @TableField("email")
     private String email;
 
-    /**
-     * To put in password in MD5
-     */
-    @TableField("password")
+    @TableField(exist = false)
+    private String qqOpenId;
+
+    @TableField(exist = false)
+    private String qqAvatar;
+
     private String password;
 
-    /**
-     * Registry time
-     */
     @TableField("reg_time")
-    private LocalDateTime regTime;
+    private Date joinTime;
 
-    /**
-     * The status of users.0 is banned, 1 is enabled
-     */
-    @TableField("status")
-    private Boolean status;
+    @TableField(exist = false)
+    private Date lastLoginTime;
 
-    /**
-     * The occupied space, use byte.
-     */
-    @TableField("occu_space")
+    private Integer status;
+
+    // 👇 新增：角色映射字段 (0:管理员, 1:老师, 2:学生, 3:访客)
+    private Integer role;
+
+    @TableField(exist = false)
+    private Long useSpace;
+
+    private Long totalSpace;
     private Long occuSpace;
 
-    /**
-     * The total space of user
-     */
-    @TableField("total_space")
-    private Long totalSpace;
 
-    /**
-     * Apply the role for the user.0 is admin, 1 is teacher, 2 is student,3 is guest.
-     */
-    @TableField("role")
-    private Byte role;
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
+
+    public String getNickName() { return nickName; }
+    public void setNickName(String nickName) { this.nickName = nickName; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getQqOpenId() { return qqOpenId; }
+    public void setQqOpenId(String qqOpenId) { this.qqOpenId = qqOpenId; }
+
+    public String getQqAvatar() { return qqAvatar; }
+    public void setQqAvatar(String qqAvatar) { this.qqAvatar = qqAvatar; }
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+
+    public Date getJoinTime() { return joinTime; }
+    public void setJoinTime(Date joinTime) { this.joinTime = joinTime; }
+
+    public Date getLastLoginTime() { return lastLoginTime; }
+    public void setLastLoginTime(Date lastLoginTime) { this.lastLoginTime = lastLoginTime; }
+
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
+
+    public Integer getRole() { return role; }
+    public void setRole(Integer role) { this.role = role; }
+
+    public Long getUseSpace() { return useSpace; }
+    public void setUseSpace(Long useSpace) { this.useSpace = useSpace; }
+
+    public Long getTotalSpace() { return totalSpace; }
+    public void setTotalSpace(Long totalSpace) { this.totalSpace = totalSpace; }
+
+    public Long getOccuSpace() { return occuSpace; }
+    public void setOccuSpace(Long occuSpace) { this.occuSpace = occuSpace; }
 }
