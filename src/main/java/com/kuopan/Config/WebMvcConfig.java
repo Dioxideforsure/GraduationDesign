@@ -11,8 +11,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Resource
     private AppConfig appConfig;
-
-    @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // 映射静态资源
         registry.addResourceHandler("/file_res/**")

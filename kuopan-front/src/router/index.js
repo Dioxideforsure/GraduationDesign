@@ -9,7 +9,12 @@ const router = createRouter({
             name: 'Login',
             component: () => import("@/views/Login.vue")
         },
-
+        // 👇 新增：公开分享提取页面（免登录，独立页面）
+        {
+            path: '/shareCheck/:shareId',
+            name: 'ShareCheck',
+            component: () => import("@/views/webshare/ShareCheck.vue")
+        },
         {
             path: '/',
             name: 'Framework',
@@ -53,7 +58,7 @@ const router = createRouter({
                         needLogin: true,
                         menuCode: "settings",
                     },
-                    component: () => import("@/views/admin/sysSettings.vue")
+                    component: () => import("@/views/admin/SysSettings.vue")
                 },
                 {
                     path: '/settings/userList',
@@ -82,8 +87,9 @@ router.beforeEach((to, from, next) => {
     const userInfo = VueCookies.get("userInfo");
     if (to.meta.needLogin != null && to.meta.needLogin && userInfo == null) {
         router.push("/login");
+    } else {
+        next();
     }
-    next();
 })
 
 export default router
