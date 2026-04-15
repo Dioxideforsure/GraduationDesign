@@ -5,12 +5,29 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a4c24853-64ea-4a2b-9320-bea35a4f2bef" name="更改" comment="">
+      <change afterPath="$PROJECT_DIR$/kuopan-front/src/views/webshare/ShareCheck.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/database/file_share_design.sql" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/kuopan/Controller/AdminController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/kuopan/Controller/ShareController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/kuopan/Controller/WebShareController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/kuopan/DAO/FileShareMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/kuopan/Entity/FileShare.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kuopan-front/src/router/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/kuopan-front/src/router/index.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kuopan-front/src/views/admin/FileList.vue" beforeDir="false" afterPath="$PROJECT_DIR$/kuopan-front/src/views/admin/FileList.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kuopan-front/src/views/admin/SysSettings.vue" beforeDir="false" afterPath="$PROJECT_DIR$/kuopan-front/src/views/admin/SysSettings.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kuopan-front/src/views/admin/UserList.vue" beforeDir="false" afterPath="$PROJECT_DIR$/kuopan-front/src/views/admin/UserList.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kuopan-front/src/views/main/Main.vue" beforeDir="false" afterPath="$PROJECT_DIR$/kuopan-front/src/views/main/Main.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kuopan-front/src/views/recycle/Recycle.vue" beforeDir="false" afterPath="$PROJECT_DIR$/kuopan-front/src/views/recycle/Recycle.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/database/file_upload_design.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/database/file_upload_design.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/kuopan/Controller/RecycleController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/kuopan/Controller/RecycleController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/kuopan/Service/impl/FileInfoServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/kuopan/Service/impl/FileInfoServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kuopan-front/src/views/share/Share.vue" beforeDir="false" afterPath="$PROJECT_DIR$/kuopan-front/src/views/share/Share.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/kuopan/Component/RedisComponent.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/kuopan/Component/RedisComponent.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/kuopan/Config/AppConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/kuopan/Config/AppConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/kuopan/Config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/kuopan/Config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/kuopan/Config/WebMvcConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/kuopan/Config/WebMvcConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/kuopan/Entity/UserInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/kuopan/Entity/UserInfo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/kuopan/Entity/constants/Constants.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/kuopan/Entity/constants/Constants.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/kuopan/Entity/dto/SysSettingsDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/kuopan/Entity/dto/SysSettingsDto.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/kuopan/Service/impl/UserInfoServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/kuopan/Service/impl/UserInfoServiceImpl.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -110,7 +127,10 @@
       <workItem from="1775662685763" duration="3348000" />
       <workItem from="1775700767251" duration="4725000" />
       <workItem from="1775705680627" duration="34000" />
-      <workItem from="1776055373730" duration="1858000" />
+      <workItem from="1776055373730" duration="3003000" />
+      <workItem from="1776065954790" duration="2007000" />
+      <workItem from="1776083689698" duration="8884000" />
+      <workItem from="1776234333314" duration="311000" />
     </task>
     <servers />
   </component>

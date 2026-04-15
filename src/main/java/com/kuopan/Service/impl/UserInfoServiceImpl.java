@@ -1,16 +1,12 @@
 package com.kuopan.Service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.kuopan.Component.RedisComponent;
 import com.kuopan.Config.AppConfig;
 import com.kuopan.Entity.UserInfo;
 import com.kuopan.DAO.UserInfoMapper;
-import com.kuopan.Entity.constants.Constants;
 import com.kuopan.Entity.dto.SessionWebUserDto;
 import com.kuopan.Entity.dto.UserSpaceDto;
-import com.kuopan.Entity.enums.SHAEnum;
 import com.kuopan.Exception.BusinessException;
 import com.kuopan.Service.EmailCodeService;
 import com.kuopan.Service.IUserInfoService;
@@ -18,16 +14,14 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.kuopan.Util.SHAUtil;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.concurrent.TimeUnit;
 
 /**
  * <p>
- * To put in User Infomation 服务实现类
+ * User Information 服务实现类
  * </p>
  *
  * @author Kuo
@@ -44,14 +38,13 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
 
     @Resource
     private RedisComponent redisComponent;
+
     @Autowired
     private EmailCodeService emailCodeService;
 
-    // Complete the login method
     @Override
     @Transactional(rollbackFor = Exception.class)
     public SessionWebUserDto login(String email, String password) {
-        System.out.println( "Notice:" + email + password);
         LambdaQueryWrapper<UserInfo> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(UserInfo::getEmail, email);
         UserInfo user = userInfoMapper.selectOne(lambdaQueryWrapper);
@@ -60,25 +53,21 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
             throw new BusinessException("账号或密码错误");
         }
 
-        if (!user.getStatus()) {
-            throw new BusinessException("账号已被禁用");
+        if (user.getStatus() == null || user.getStatus() != 1) {
+            throw new BusinessException("账号已被禁用，请联系管理员");
         }
 
         SessionWebUserDto sessionWebUserDto = new SessionWebUserDto();
         sessionWebUserDto.setUserId(user.getUserId());
-        sessionWebUserDto.setNickName(user.getUserName());
+
+        sessionWebUserDto.setNickName(user.getNickName());
+
         sessionWebUserDto.setIsAdmin(false);
         if (ArrayUtils.contains(appConfig.getAdminEmail().split(","), email)) {
             sessionWebUserDto.setIsAdmin(true);
         }
 
-
-        // User Space
-        UserSpaceDto userSpaceDto = new UserSpaceDto();
-        // TODO: Complete the detailed used space from database
-//        userSpaceDto.setUseSpace();
-        userSpaceDto.setTotalSpace(userSpaceDto.getTotalSpace());
-        redisComponent.saveUserUsedSpace(user.getUserId(), userSpaceDto);
+        redisComponent.getUserUsedSpace(user.getUserId());
 
         return sessionWebUserDto;
     }
@@ -114,12 +103,9 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
         }
         String userID = userDto.getUserId();
 
-
         LambdaQueryWrapper<UserInfo> query = new LambdaQueryWrapper<>();
         query.eq(UserInfo::getUserId, userID);
         UserInfo userInfo = userInfoMapper.selectOne(query);
-
-
 
         if (!userInfo.getPassword().equals(oldPassword)) {
             throw new BusinessException(403, "旧密码错误");
@@ -131,9 +117,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
 
         int rows = userInfoMapper.updateById(updateUser);
         if (rows == 0) {
-            throw new BusinessException("重置密码失败，请稍后重试");
+            throw new BusinessException("修改密码失败，请稍后重试");
         }
     }
-
-
 }

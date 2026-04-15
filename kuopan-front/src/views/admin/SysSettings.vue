@@ -1,34 +1,43 @@
 <template>
-  <div class="sys-settings">
-    <el-card class="box-card">
+  <div class="sys-settings-wrap">
+    <el-card shadow="hover" class="card-container">
       <template #header>
         <div class="card-header">
-          <span>系统基础设置</span>
+          <span><i class="iconfont icon-setting"></i> 系统全局参数设置</span>
         </div>
       </template>
-      <el-form :model="formData" :rules="rules" ref="formDataRef" label-width="150px" class="settings-form">
-        <el-form-item label="注册邮件标题" prop="registerEmailTitle">
-          <el-input v-model="formData.registerEmailTitle" placeholder="请输入注册邮件验证码标题" />
+
+      <el-form
+          :model="formData"
+          :rules="rules"
+          ref="formDataRef"
+          label-width="150px"
+          style="max-width: 800px"
+      >
+        <el-divider content-position="left">邮件验证码设置</el-divider>
+        <el-form-item label="邮件标题" prop="registerEmailTitle">
+          <el-input v-model="formData.registerEmailTitle" placeholder="请输入注册/找回密码邮件的标题" />
         </el-form-item>
-        
-        <el-form-item label="注册邮件内容" prop="registerEmailContent">
-          <el-input 
-            v-model="formData.registerEmailContent" 
-            type="textarea" 
-            :rows="3" 
-            placeholder="请输入注册邮件验证码内容，验证码使用 %s 占位" 
+        <el-form-item label="邮件内容模板" prop="registerEmailContent">
+          <el-input
+              type="textarea"
+              :rows="4"
+              v-model="formData.registerEmailContent"
+              placeholder="内容中必须包含 %s 占位符代表验证码"
           />
-        </el-form-item>
-        
-        <el-form-item label="初始网盘空间大小" prop="userInitUseSpace">
-          <el-input v-model.number="formData.userInitUseSpace" placeholder="请输入用户初始网盘空间大小">
-            <template #append>MB</template>
-          </el-input>
-          <div class="tips">新用户注册时默认分配的可用空间大小 ( 1024 MB = 1 GB )</div>
+          <div class="tips">提示：系统发送时会自动将 <code>%s</code> 替换为6位验证码数字</div>
         </el-form-item>
 
-        <el-form-item>
-          <el-button type="primary" @click="saveSettings">保存设置</el-button>
+        <el-divider content-position="left">存储空间设置</el-divider>
+        <el-form-item label="新用户初始空间" prop="userInitUseSpace">
+          <el-input v-model.number="formData.userInitUseSpace" placeholder="请输入MB单位数值">
+            <template #append>MB</template>
+          </el-input>
+          <div class="tips">新注册用户默认分配的容量（1024MB = 1GB）</div>
+        </el-form-item>
+
+        <el-form-item style="margin-top: 30px">
+          <el-button type="primary" size="large" @click="saveSettings">保存系统配置</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -36,66 +45,88 @@
 </template>
 
 <script setup>
-import { ref, getCurrentInstance } from "vue";
+import { ref, reactive, getCurrentInstance, onMounted } from 'vue';
+
 const { proxy } = getCurrentInstance();
 
+const formData = reactive({
+  registerEmailTitle: '',
+  registerEmailContent: '',
+  userInitUseSpace: 1024,
+});
+
 const formDataRef = ref();
-const formData = ref({});
 
 const rules = {
-  registerEmailTitle: [{ required: true, message: "请输入邮件标题", trigger: "blur" }],
-  registerEmailContent: [{ required: true, message: "请输入邮件内容", trigger: "blur" }],
+  registerEmailTitle: [{ required: true, message: '请输入邮件标题' }],
+  registerEmailContent: [
+    { required: true, message: '请输入模板内容' },
+    {
+      validator: (rule, value, callback) => {
+        if (value.indexOf('%s') === -1) {
+          callback(new Error('内容模板必须包含 %s 占位符'));
+        } else {
+          callback();
+        }
+      },
+    },
+  ],
   userInitUseSpace: [
-    { required: true, message: "请输入初始空间大小", trigger: "blur" },
-    { type: 'number', message: "空间大小必须为数字", trigger: "blur" }
-  ]
+    { required: true, message: '请输入初始空间' },
+    { type: 'number', message: '空间大小必须为数字' },
+  ],
 };
 
-// 模拟加载系统设置
-const loadSettings = () => {
-  // 模拟从后端获取数据
-  setTimeout(() => {
-    formData.value = {
-      registerEmailTitle: "【KuoPan】邮箱验证码",
-      registerEmailContent: "您好，您的注册验证码是：%s，有效期5分钟。如非本人操作请忽略。",
-      userInitUseSpace: 1024 // 默认给 1GB
-    };
-  }, 300);
+// 获取配置
+const getSettings = async () => {
+  let result = await proxy.Request({
+    url: '/admin/getSysSettings',
+  });
+  if (!result) return;
+  Object.assign(formData, result.data);
 };
 
+// 保存配置
 const saveSettings = () => {
-  formDataRef.value.validate((valid) => {
-    if (valid) {
-      // 发送请求保存到后端
-      proxy.Message.success("系统设置保存成功 (待对接后端)");
-      console.log("保存的数据:", formData.value);
+  formDataRef.value.validate(async (valid) => {
+    if (!valid) return;
+    let result = await proxy.Request({
+      url: '/admin/saveSysSettings',
+      params: formData,
+    });
+    if (result) {
+      proxy.Message.success('保存成功！设置已即时生效');
     }
   });
 };
 
-loadSettings();
+onMounted(() => {
+  getSettings();
+});
 </script>
 
 <style lang="scss" scoped>
-.sys-settings {
-  padding-right: 20px;
-  padding-top: 20px;
-  
-  .box-card {
-    width: 60%;
-    min-width: 600px;
+.sys-settings-wrap {
+  padding: 20px;
+  .card-container {
+    border-radius: 8px;
   }
-  
   .card-header {
     font-weight: bold;
-    color: #333;
+    font-size: 18px;
+    color: #409eff;
   }
-
   .tips {
-    color: #888;
+    color: #909399;
     font-size: 12px;
-    margin-top: 5px;
     line-height: 1.5;
+    margin-top: 5px;
+    code {
+      background: #f4f4f5;
+      padding: 2px 4px;
+      color: #f56c6c;
+      border-radius: 4px;
+    }
   }
 }
 </style>

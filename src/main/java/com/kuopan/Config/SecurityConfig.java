@@ -25,7 +25,10 @@ public class SecurityConfig {
                         "/getUsedSpace", "/updatePassword", "/logout", "/file/upload",
                         "/file/list", "/file/uploadChunk", "/file/mergeChunk", "/file/checkMd5",
                         "/file/newFolder", "/file/delFile",
-                        "/recycle/**" // 放行回收站所有接口
+                        "/recycle/**",
+                        "/admin/**",
+                        "/share/**",
+                        "/showShare/**"
                 )
                 .permitAll()
                 .anyRequest().authenticated()

@@ -85,8 +85,9 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="150" align="center">
+        <el-table-column label="操作" width="200" align="center">
           <template #default="scope">
+            <el-button type="success" link @click="openShareDialog(scope.row)">分享</el-button>
             <el-button type="primary" link v-if="scope.row.folderType != 1" @click="downloadFile(scope.row)">下载</el-button>
             <el-button type="danger" link @click="deleteFile(scope.row)">删除</el-button>
           </template>
@@ -132,6 +133,40 @@
       </template>
     </el-dialog>
 
+    <el-dialog v-model="shareDialogVisible" title="创建分享链接" width="450px">
+      <el-form :model="shareForm" label-width="80px">
+        <el-form-item label="文件名称">{{ shareForm.fileName }}</el-form-item>
+        <el-form-item label="有效期">
+          <el-radio-group v-model="shareForm.validType">
+            <el-radio :label="0">1天</el-radio>
+            <el-radio :label="1">7天</el-radio>
+            <el-radio :label="2">30天</el-radio>
+            <el-radio :label="3">永久有效</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="提取码">
+          <el-input v-model="shareForm.code" placeholder="自定义5位提取码，留空系统自动生成" maxlength="5" clearable />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="shareDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitShare">生成链接</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="shareResultVisible" title="分享成功" width="450px">
+      <div style="margin-bottom: 10px;">分享链接：</div>
+      <el-input :model-value="shareResult.url" readonly>
+        <template #append><el-button @click="copyText(shareResult.url)">复制</el-button></template>
+      </el-input>
+      <div style="margin: 20px 0 10px;">提取码：</div>
+      <el-input :model-value="shareResult.code" readonly>
+        <template #append><el-button @click="copyText(shareResult.code)">复制</el-button></template>
+      </el-input>
+    </el-dialog>
+
     <Preview ref="previewRef" />
   </div>
 </template>
@@ -146,7 +181,7 @@ import Message from "@/utils/Message.js";
 import SparkMD5 from 'spark-md5';
 import Preview from "@/components/Preview.vue";
 
-// ====== 🚀 引入本地精美图标资源 ======
+// ====== 引入本地精美图标资源 ======
 import iconFolder from '@/assets/icon-image/folder.png';
 import iconPdf from '@/assets/icon-image/pdf.png';
 import iconWord from '@/assets/icon-image/word.png';
@@ -182,6 +217,12 @@ const chunkSize = 10 * 1024 * 1024;
 const uploadProgress = ref({});
 const uploading = ref(false);
 const AUTO_CHUNK_THRESHOLD = 10 * 1024 * 1024;
+
+
+const shareDialogVisible = ref(false);
+const shareResultVisible = ref(false);
+const shareForm = ref({ fileId: '', fileName: '', validType: 1, code: '' });
+const shareResult = ref({ url: '', code: '' });
 
 // ==================== 智能图标匹配逻辑 ====================
 // 1. 获取服务器真实封面 (图片/视频专用)
@@ -499,6 +540,32 @@ const mergeChunks = async (fileMd5, file) => {
 
 const closeChunkDialog = () => {
   chunkUploadDialogVisible.value = false; uploading.value = false; selectedFiles.value = []; uploadProgress.value = {};
+};
+
+
+const openShareDialog = (row) => {
+  shareForm.value = { fileId: row.fileId, fileName: row.fileName, validType: 1, code: '' };
+  shareDialogVisible.value = true;
+};
+
+const submitShare = async () => {
+  let result = await Request({ url: "/share/shareFile", params: shareForm.value });
+  if (result && result.data) {
+    shareDialogVisible.value = false;
+    const host = window.location.origin;
+    shareResult.value.url = `${host}/shareCheck/${result.data.shareId}`;
+    shareResult.value.code = result.data.code;
+    shareResultVisible.value = true;
+  }
+};
+
+const copyText = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    Message.success("复制成功");
+  } catch (err) {
+    Message.error("复制失败，请手动选中复制");
+  }
 };
 </script>
 
